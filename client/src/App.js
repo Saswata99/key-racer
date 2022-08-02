@@ -1,42 +1,43 @@
-import { useState, createContext, useEffect } from "react";
+/* eslint-disable react-hooks/exhaustive-deps */
+import { useState, createContext, useEffect, useRef } from "react";
 import { InputBox, ProgressBar, TextArea, Timer } from "./components";
 import io from "socket.io-client";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 
 export const AppContext = createContext();
-const ENDPOINT = "http://localhost:5000";
+const socket = io.connect("http://localhost:5000");
 
-function App() {
+function App(props) {
   const [wordsArray, setWordsArray] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [inputValue, setInputValue] = useState("");
   const [gameState, setGameState] = useState("");
-  const [time, setTime] = useState();
+  const [time, setTime] = useState(0);
+  const [progressData, setProgressData] = useState(new Map());
 
-  const navigate = useNavigate()
+  const navigate = useNavigate();
+  const params = useParams();
 
   useEffect(() => {
-    const socket = io.connect(ENDPOINT);
-    socket.on("words-array", data => {
-      setWordsArray(data)
-    })
-    
-    socket.on("init", (roomID) => navigate(`/${roomID}`));
+    socket.emit("join-room", params.roomID);
+    socket.on("redirect", (data) => navigate("/" + data));
 
+    socket.on("words-array", (data) => {
+      setWordsArray(data);
+    });
 
-
-
-
-
-
-
-
-
-
-    setTime(Date.now());
+    socket.on("progress-update", (playerData) =>
+      setProgressData(new Map(playerData))
+    );
+    // setTime(Date.now());
   }, []);
 
-  useEffect(() => {}, [currentIndex]);
+
+  useEffect(() => {
+    const temp = (currentIndex / wordsArray.length) * 100;
+    const progress = isNaN(temp) ? 0 : temp;
+    socket.emit("progress-in", progress);
+  }, [currentIndex]);
 
   const handleInput = (event) => {
     const input = event.target.value;
@@ -62,7 +63,7 @@ function App() {
 
     return Math.floor(wordTyped / timeDef);
   };
-
+  console.log('render app');
   return (
     <AppContext.Provider
       value={{
@@ -70,15 +71,17 @@ function App() {
         setWordsArray,
         currentIndex,
         setCurrentIndex,
-        inputValue: inputValue,
+        inputValue,
         setInputValue,
+        progressData,
+        setProgressData,
         handleInput,
         calculateWPM,
       }}
     >
       <div className="App">
         <div className="main-body">
-          <Timer />
+          {/* <Timer /> */}
           <ProgressBar />
           <TextArea />
           <InputBox />

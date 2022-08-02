@@ -1,23 +1,18 @@
-import { useContext } from 'react'
-import { AppContext } from '../App'
+import { useContext } from "react";
+import { AppContext } from "../App";
 
 function ProgressBar() {
-
-  const {
-    wordsArray,
-    currentIndex
-  } = useContext(AppContext)
-  
-  const temp = currentIndex / wordsArray.length * 100
-  const progress = isNaN(temp)? 0 : temp
-
+  const { progressData } = useContext(AppContext);
   return (
-    <progress 
-      id="file" 
-      max="100" 
-      value= {progress}
-    />
-  )
+    <div className="progressbar-area">
+      {[...progressData].map(data => (
+        <div key={data[0]} className="progressbar">
+          <h6>{data[0]}</h6>
+          <progress id="file" max="100" value={data[1]} />
+        </div>
+      ))}
+    </div>
+  );
 }
 
-export default ProgressBar
+export default ProgressBar;

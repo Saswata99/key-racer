@@ -1,21 +1,21 @@
-import { useContext } from 'react'
-import { AppContext } from '../App';
+import { useContext } from "react";
+import { AppContext } from "../App";
 
 function InputBox() {
-
-  const { inputValue, handleInput } = useContext(AppContext) 
+  const { inputValue, handleInput } = useContext(AppContext);
 
   return (
-    <input 
-      type='input'
-      onChange={e => handleInput(e)}
+    <input
+      className="text-input"
+      type="input"
+      onChange={(e) => handleInput(e)}
       value={inputValue}
       style={{
         flexGrow: 1,
-        margin: '5px'
+        margin: "5px",
       }}
     />
-  )
+  );
 }
 
-export default InputBox
+export default InputBox;
