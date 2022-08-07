@@ -1,9 +1,9 @@
-import express from "express";
 import { Server } from "socket.io";
+import { uid } from "uid";
+import express from "express";
 import http from "http";
 import cors from "cors";
 import fetchQuotes from "./api.js";
-import { uid } from "uid";
 
 const PORT = process.env.PORT || 5000;
 
@@ -17,17 +17,14 @@ const io = new Server(server, {
   },
 });
 
-let gameRunning = {};
 const color = [
   "aqua",
-  "black",
   "blue",
   "fuchsia",
   "gray",
   "green",
   "lime",
   "maroon",
-  "navy",
   "olive",
   "purple",
   "red",
@@ -36,12 +33,33 @@ const color = [
   "white",
   "yellow",
 ];
-let nameCounter = 0;
-
-const wordsArray = await fetchQuotes();
 const playersData = new Map();
+const gameRunning = {};
+const wordsArray = {};
+const nameCounter = {};
+const gameTimer = {};
 
-const startGame = async (roomID) => {
+function allFinish(roomID, playersData) {
+  let result = true;
+  playersData.forEach((value) => {
+    if (value.roomID === roomID && value.progress != 100) {
+      result = false;
+      return;
+    }
+  });
+
+  return result;
+}
+
+function calculateWPM(roomID, currentIndex){
+  const wordTyped = wordsArray[roomID].slice(0, currentIndex);
+  const letterTyped = wordTyped.reduce((res, val) => res + val.length, 0) / 5;
+  const timeDiff = (Date.now() - gameTimer[roomID]) / 1000 / 60;
+
+  return Math.ceil(letterTyped / timeDiff)
+}
+
+function startGame(roomID) {
   if (gameRunning[roomID]) return;
   const playerCount = [...playersData].filter(
     (el) => el[1].roomID === roomID
@@ -49,46 +67,74 @@ const startGame = async (roomID) => {
   if (playerCount < 2) return;
 
   gameRunning[roomID] = true;
-  const wordsArray = await fetchQuotes();
+  gameTimer[roomID] = Date.now();
 
-  let time = 3;
-  const timmer = setInterval(() => {
+  let countDownTime = 5;
+  let raceTime = 90;
+
+  const timer = setInterval(async () => {
     const memberCount = io.of("/").adapter.rooms.get(roomID);
-    if (time <= 0 || !memberCount) clearInterval(timmer);
-    io.in(roomID).emit("timer", time--);
-  }, 1000);
-};
+    if (!memberCount) {
+      clearInterval(timer);
+      return;
+    }
 
-const brodcast = (roomID, socket) => {
-  const playesWithRoomID = io.of("/").adapter.rooms.get(roomID);
-  if (playesWithRoomID) return;
-  const playersDataWithRoomID = [...playersData].filter((data) =>
-    playesWithRoomID.has(data[0])
+    if (countDownTime >= 0) {
+      io.in(roomID).emit("timer", countDownTime--);
+      if (!countDownTime) io.in(roomID).emit("start-game");
+      return;
+    }
+    
+    if (raceTime >= 0 && !allFinish(roomID, playersData)) {
+      io.in(roomID).emit("timer", raceTime--);
+      return;
+    }
+
+    clearInterval(timer);
+    wordsArray[roomID] = await fetchQuotes();
+    io.in(roomID).emit("words-array", wordsArray[roomID]);
+    io.in(roomID).emit("start-game");
+    playersData.forEach((value, key) => {
+      if (value.roomID === roomID) {
+        playersData.set(key, { ...value, progress: 0, wpm: 0 });
+      }
+    });
+    brodcast(roomID);
+    gameRunning[roomID] = false;
+    startGame(roomID);
+  }, 1000);
+}
+
+function brodcast(roomID, socket) {
+  const playesThisRoom = io.of("/").adapter.rooms.get(roomID);
+  const playersDataThisRoom = [...playersData].filter((data) =>
+    playesThisRoom.has(data[0])
   );
   if (socket) {
-    socket.emit("progress-out", playersDataWithRoomID);
+    socket.emit("progress-out", playersDataThisRoom);
     return;
   }
-  io.in(roomID).emit("progress-out", playersDataWithRoomID);
-};
+  io.in(roomID).emit("progress-out", playersDataThisRoom);
+}
 
 io.on("connection", (socket) => {
-  console.log("--------------------------------------------");
-  console.log(socket.id);
+  console.log(socket.id, "--- join");
 
   let roomID;
 
-  socket.on("init", (data) => {
+  socket.on("init", async (data) => {
     roomID = data ? data.slice(0, 5) : uid(5);
     socket.join(roomID);
     socket.emit("redirect", roomID);
-    socket.emit("words-array", wordsArray);
+    if (!wordsArray[roomID]) wordsArray[roomID] = await fetchQuotes();
+    if (!nameCounter[roomID]) nameCounter[roomID] = 0;
+    socket.emit("words-array", wordsArray[roomID]);
     brodcast(roomID, socket);
   });
 
   socket.on("join-race", () => {
     playersData.set(socket.id, {
-      name: String(++nameCounter),
+      name: String(++nameCounter[roomID]),
       roomID,
       color: color[(Math.random() * color.length) | 0],
       progress: 0,
@@ -98,20 +144,26 @@ io.on("connection", (socket) => {
     startGame(roomID);
   });
 
-  socket.on("progress-in", (data) => {
-    if (!playersData.has(socket.id)) return;
+  socket.on("progress-in", (currentIndex) => {
     playersData.set(socket.id, {
       ...playersData.get(socket.id),
-      progress: data.progress,
-      wpm: data.wpm,
+      progress: (currentIndex / wordsArray[roomID].length) * 100,
+      wpm: calculateWPM(roomID, currentIndex)
     });
     brodcast(roomID);
   });
 
-  // startGame(roomID);
+  socket.on("disconnect", () => {
+    console.log(socket.id, "--- leave");
 
-  socket.on("disconnect", (data) => {
     playersData.delete(socket.id);
+    if (!io.of("/").adapter.rooms.get(roomID)) {
+      console.log("Room:", roomID, "close");
+      delete gameRunning[roomID];
+      delete wordsArray[roomID];
+      delete nameCounter[roomID];
+      return;
+    }
     brodcast(roomID);
   });
 });

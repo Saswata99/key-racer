@@ -4,26 +4,26 @@ import Car from "./Car";
 
 function ProgressBar() {
   const { progressData, socketID } = useContext(AppContext);
-  // console.log(progressData);
   return (
     <div className="progressbar-area">
       {[...progressData].map((data) => {
         const { name, progress, color, wpm } = data[1];
-        const progressPadding = (progress / 100) * 75 + "%";
+        const padding = (progress / 100) * 80 + "%";
         return (
           <div key={name} className="progressbar">
-            <div
-              className="progressbar-main"
-              style={{ paddingLeft: progressPadding }}
-            >
-              <div className="player-name">
-                {socketID === data[0] && <span>u&nbsp;</span>}
+            <div className="progressbar-main" style={{ paddingLeft: padding }}>
+              <p
+                className={
+                  socketID === data[0]
+                    ? "player-name current-player"
+                    : "player-name"
+                }
+              >
                 {name}
-              </div>
+              </p>
               <Car color={color} />{" "}
             </div>
-            <div className="progressbar-result">{wpm}</div>
-            {/* <hr color="" style={{ marginTop: "-15px" }} /> */}
+            <p className="progressbar-result">{wpm}</p>
           </div>
         );
       })}

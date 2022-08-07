@@ -15,7 +15,7 @@ export default async function fetchQuotes() {
   const data = await response.json();
   const arr = createWordsArray(data.content);
 
-  // const text = "a a a a a a a a a a a a a a a a a a a a a "
+  // const text = "a a a a a"
   //     //"The obj variable is an object with the same key-value pairs on each re-render, but it points to a different location in memory every time, so it would fail the equality check and cause an infinite re-render loop.";
 
   // const arr = createWordsArray(text);

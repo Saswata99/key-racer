@@ -5,7 +5,7 @@ function TextArea() {
   const { wordsArray, currentIndex, inputValue } = useContext(AppContext);
 
   return (
-    <div className="text-paragraph">
+    <div className="paragraph-area">
       {wordsArray.map((word, wordIndex) => (
         <span key={wordIndex}>
           {word.split("").map((letter, letterIndex) => {

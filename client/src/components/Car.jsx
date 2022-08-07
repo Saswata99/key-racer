@@ -3,14 +3,8 @@ import React from "react";
 function Car(props) {
   return (
     <svg
-      version="1.1"
-      id="Layer_1"
-      xmlns="http://www.w3.org/2000/svg"
-      x="0px"
-      y="0px"
-      viewBox="0 0 512 512"
-      width="60px"
-      style={{paddingLeft:'5'}}
+      viewBox="0 0 500 400"
+      width="50px"
     >
       <path
         fill={props.color}
@@ -67,21 +61,6 @@ function Car(props) {
 	c4.427,0,8.016-3.589,8.016-8.016c0-4.427-3.589-8.016-8.016-8.016c-17.68,0-32.063,14.383-32.063,32.063
 	c0,17.68,14.383,32.063,32.063,32.063s32.063-14.383,32.063-32.063C448.877,295.659,445.288,292.07,440.861,292.07z"
       />
-      <g></g>
-      <g></g>
-      <g></g>
-      <g></g>
-      <g></g>
-      <g></g>
-      <g></g>
-      <g></g>
-      <g></g>
-      <g></g>
-      <g></g>
-      <g></g>
-      <g></g>
-      <g></g>
-      <g></g>
     </svg>
   );
 }
