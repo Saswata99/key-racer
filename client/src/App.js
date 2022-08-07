@@ -1,5 +1,5 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-import { useState, createContext, useEffect, useRef } from "react";
+import { useState, createContext, useEffect } from "react";
 import { InputBox, ProgressBar, TextArea, Timer } from "./components";
 import io from "socket.io-client";
 import { useNavigate, useParams } from "react-router-dom";
@@ -12,34 +12,44 @@ function App(props) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [inputValue, setInputValue] = useState("");
   const [gameState, setGameState] = useState("");
-  const [time, setTime] = useState(0);
+  const [timeRPM, setTimeRPM] = useState(null);
+  const [timeGame, setTimeGame] = useState(0);
   const [progressData, setProgressData] = useState(new Map());
+  const [playerReady, setPlayerReady] = useState(false);
 
   const navigate = useNavigate();
   const params = useParams();
 
+  const joinRace = () => {
+    socket.emit("join-race");
+    setPlayerReady(true);
+  };
+
   useEffect(() => {
-    socket.emit("join-room", params.roomID);
+    socket.emit("init", params.roomID);
     socket.on("redirect", (data) => navigate("/" + data));
 
     socket.on("words-array", (data) => {
       setWordsArray(data);
     });
 
-    socket.on("progress-update", (playerData) =>
-      setProgressData(new Map(playerData))
+    socket.on("progress-out", (playersData) =>
+      setProgressData(new Map(playersData))
     );
-    // setTime(Date.now());
+
+    socket.on("timer", (data) => setTimeGame(data));
   }, []);
 
+  useEffect(() => {}, [gameState]);
 
   useEffect(() => {
     const temp = (currentIndex / wordsArray.length) * 100;
     const progress = isNaN(temp) ? 0 : temp;
-    socket.emit("progress-in", progress);
+    socket.emit("progress-in", { progress, wpm: calculateWPM() });
   }, [currentIndex]);
 
   const handleInput = (event) => {
+    if (timeRPM === null) setTimeRPM(Date.now());
     const input = event.target.value;
     const currentWord = wordsArray[currentIndex] ?? "";
 
@@ -49,21 +59,19 @@ function App(props) {
     if (input === currentWord) {
       setInputValue("");
       setCurrentIndex((prev) => ++prev);
-      console.log(calculateWPM());
     }
   };
 
   const calculateWPM = () => {
     const timeNow = Date.now();
-    const timeDef = (timeNow - time) / 1000 / 60;
+    const timeDef = (timeNow - timeRPM) / 1000 / 60;
     const wordTyped =
       wordsArray
         .slice(0, currentIndex)
-        .reduce((res, val) => res + val.length, 0) / 5;
-
+        .reduce((res, val) => res + val.length - 1, 0) / 5; // -1 for remove space
     return Math.floor(wordTyped / timeDef);
   };
-  console.log('render app');
+
   return (
     <AppContext.Provider
       value={{
@@ -75,16 +83,24 @@ function App(props) {
         setInputValue,
         progressData,
         setProgressData,
+        timeGame,
+        setTimeGame,
+        playerReady,
+        joinRace,
         handleInput,
-        calculateWPM,
+        socketID: socket.id,
       }}
     >
       <div className="App">
-        <div className="main-body">
-          {/* <Timer /> */}
-          <ProgressBar />
-          <TextArea />
-          <InputBox />
+        <div className="body-main">
+          <div className="body-top">
+            <Timer />
+            <ProgressBar />
+          </div>
+          <div className="body-buttom">
+            <TextArea />
+            <InputBox />
+          </div>
         </div>
       </div>
     </AppContext.Provider>

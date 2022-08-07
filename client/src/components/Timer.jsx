@@ -1,8 +1,10 @@
-import React from 'react'
+import React, { useContext } from 'react'
+import { AppContext } from "../App";
 
 function Timer() {
+  const { timeGame } = useContext(AppContext);
   return (
-    <div>Timer</div>
+    <div className='timer'>{timeGame}</div>
   )
 }
 
