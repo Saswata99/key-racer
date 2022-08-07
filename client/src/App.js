@@ -5,6 +5,7 @@ import io from "socket.io-client";
 import { useNavigate, useParams } from "react-router-dom";
 
 export const AppContext = createContext();
+const socket = io.connect("https://key-racer-server.herokuapp.com");
 const socket = io.connect("http://localhost:5000");
 
 function App() {
