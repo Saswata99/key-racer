@@ -8,7 +8,7 @@ function ProgressBar() {
     <div className="progressbar-area">
       {[...progressData].map((data) => {
         const { name, progress, color, wpm } = data[1];
-        const padding = (progress / 100) * 80 + "%";
+        const padding = (progress / 100) * 75 + "%";
         return (
           <div key={name} className="progressbar">
             <div className="progressbar-main" style={{ paddingLeft: padding }}>
