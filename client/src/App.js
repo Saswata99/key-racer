@@ -6,7 +6,7 @@ import { useNavigate, useParams } from "react-router-dom";
 
 export const AppContext = createContext();
 const socket = io.connect("https://key-racer-server.herokuapp.com");
-//const socket = io.connect("http://localhost:5000");
+// const socket = io.connect("http://localhost:5000");
 
 function App() {
   const [wordsArray, setWordsArray] = useState([]);
@@ -63,6 +63,11 @@ function App() {
     socket.emit("progress-in", currentIndex + 1);
   };
 
+  const toggleTheme = (event) => {
+    const mode = event.target.checked ? "light" : "dark"
+    document.documentElement.setAttribute("theme", mode);
+  };
+
   return (
     <AppContext.Provider
       value={{
@@ -80,10 +85,14 @@ function App() {
       }}
     >
       <div className="App">
+        <div className="toggle-main">
+          <input id="toggle-input" onChange={toggleTheme} type="checkbox" />
+          <label className="toggle-label" htmlFor="toggle-input" />
+        </div>
         <div className="body">
           <Timer />
           <ProgressBar />
-          <div className="body-main">
+          <div className="main-area">
             <TextArea />
             <InputBox />
           </div>

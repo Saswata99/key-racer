@@ -8,6 +8,11 @@ import fetchQuotes from "./api.js";
 const PORT = process.env.PORT || 5000;
 
 const app = express();
+
+app.get("/", (req, res) => {
+  res.status(200).send("Key Racer server, Game link: https://key-racer.netlify.app");
+});
+
 app.use(cors());
 const server = http.createServer(app);
 const io = new Server(server, {
@@ -51,12 +56,12 @@ function allFinish(roomID, playersData) {
   return result;
 }
 
-function calculateWPM(roomID, currentIndex){
+function calculateWPM(roomID, currentIndex) {
   const wordTyped = wordsArray[roomID].slice(0, currentIndex);
-  const letterTyped = wordTyped.reduce((res, val) => res + val.length, 0) / 5;
+  const letterTyped = wordTyped.reduce((res, val) => res + val.length, 0) / 4;
   const timeDiff = (Date.now() - gameTimer[roomID]) / 1000 / 60;
 
-  return Math.ceil(letterTyped / timeDiff)
+  return Math.ceil(letterTyped / timeDiff);
 }
 
 function startGame(roomID) {
@@ -84,7 +89,7 @@ function startGame(roomID) {
       if (!countDownTime) io.in(roomID).emit("start-game");
       return;
     }
-    
+
     if (raceTime >= 0 && !allFinish(roomID, playersData)) {
       io.in(roomID).emit("timer", raceTime--);
       return;
@@ -148,7 +153,7 @@ io.on("connection", (socket) => {
     playersData.set(socket.id, {
       ...playersData.get(socket.id),
       progress: (currentIndex / wordsArray[roomID].length) * 100,
-      wpm: calculateWPM(roomID, currentIndex)
+      wpm: calculateWPM(roomID, currentIndex),
     });
     brodcast(roomID);
   });
