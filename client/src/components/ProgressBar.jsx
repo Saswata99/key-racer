@@ -23,7 +23,7 @@ function ProgressBar() {
               </p>
               <Car color={color} />{" "}
             </div>
-            <p className="progressbar-result">{wpm}</p>
+            <p className="progressbar-result">{wpm} wpm</p>
           </div>
         );
       })}
