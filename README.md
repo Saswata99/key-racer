@@ -1,9 +1,10 @@
-## key-racer
-Game link: https://key-racer.netlify.app/
+# Key Racer
 
-Multiplayer online type racin game.
+[https://key-racer.netlify.app](https://key-racer.netlify.app)
 
-Build with:
+***Multiplayer online type racin game.***
+
+## ⚒️ Built with:
 - React
 - Socket.io
 - React router
